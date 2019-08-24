@@ -1,10 +1,11 @@
 import java.sql.*;
+import java.io.*;
 import java.util.ArrayList;
 
 /**
  *Reads a given database's structure and provides the sql commands needed to recreate it
  *
- * @author Nathaniel
+ * @author Nathaniel Vanderpuye
  */
 public class SQLiteJDBC extends DbBasic {
 	
@@ -20,21 +21,14 @@ public class SQLiteJDBC extends DbBasic {
      * @param dbName The name of the database to be used
      */
 	public SQLiteJDBC(String dbName){
-		
 		super(dbName);
 		
 		try{
-			
 			data = con.getMetaData();
-			
 		}
-		
 		catch(Exception e){
-		
 			System.out.println(e);
-			
 		}
-		
 	}
 	
 	
@@ -53,9 +47,8 @@ public class SQLiteJDBC extends DbBasic {
 		ArrayList<ArrayList<String>> info = new ArrayList<ArrayList<String>>();
 		
 		try{
-			
 			ResultSet tables = data.getTables(null,null,null, new String[]{"TABLE"});
-		
+
 			while(tables.next()){
 				
 				String tableSchema = tables.getString("TABLE_SCHEM");
@@ -66,51 +59,42 @@ public class SQLiteJDBC extends DbBasic {
 				ResultSet cols = null;
 				
 				try{
-					
 					cols = data.getColumns(tableCatalog,tableSchema,tableName,null);
-					
 				}
-				
 				catch(Exception e){
-				
 					System.out.println(e);
-			
 				}
 				
 				String primaryKeys = getPrimKeys(tableCatalog,tableName,tableSchema);
 				ArrayList<String> foreignKeys = getForKeys(tableCatalog,tableName,tableSchema);
 				allTableColumns.add(getColumns(cols));
-				
 				allPrimaryKeys.add(primaryKeys);
 				allForeignKeys.add(foreignKeys);
 				allTables.add(tableName);
-
-				
 			}
-			
+
+
+			File replica = new File("Replica.txt");
+			replica.createNewFile();
+			FileWriter out = new FileWriter(replica);
+
 			for(int i = 0; i < allTables.size(); i++){
-				
-				constructTables(allTables.get(i),allPrimaryKeys.get(i),allForeignKeys.get(i),allTableColumns.get(i));
+				out.write(constructTables(allTables.get(i),allPrimaryKeys.get(i),allForeignKeys.get(i),allTableColumns.get(i)));
 				info.add(getData(allTables.get(i), allTableColumns.get(i)));
-				
 			}
 			
 			for(int j = 0; j < info.size(); j++){
-				
 				for(int a = 0; a < info.get(j).size(); a++){
-					
-					System.out.println(info.get(j).get(a));
-
+					out.write(info.get(j).get(a));
 				}
 			}
+
+			out.flush();
+			out.close();
 		}
-		
 		catch(Exception e){
-			
 			System.out.println(e);
-			
 		}
-			
 	}
 	
 	/**
@@ -127,39 +111,27 @@ public class SQLiteJDBC extends DbBasic {
 		String result = null;
 		
 		try{
-		
 			ResultSet pKeys = data.getPrimaryKeys(tableCat,tableSchem,tableNam);
-			
+
 			while(pKeys.next()){
-				
 				primKeysTemp.add(pKeys.getString("COLUMN_NAME"));
-				
 			}
 			
 			for(int i = 0; i < primKeysTemp.size();i++){
-				
 				if(i == 0){
-					
 					result = (primKeysTemp.get(i));
-					
-				}	
-				
-				else{
-					
-					result = (result + ", " + primKeysTemp.get(i));
-					
 				}
-			}	
+				else{
+					result = (result + ", " + primKeysTemp.get(i));
+				}
+			}
 
 			result = ("PRIMARY KEY (" + result + ")");
 		}
-		
 		catch (Exception e){
-			
 			System.out.println(e);
-			
 		}
-		
+
 		return result;
 	}
 	
@@ -172,26 +144,19 @@ public class SQLiteJDBC extends DbBasic {
 	 *@param tableSchem The Schema of the table included in the tables metadata
 	 *@return forKeys An arraylist that contains the sql statement needed to declare a foreign key
      */
-	public ArrayList getForKeys(String tableCat,String tableNam,String tableSchem){
+	public ArrayList<String> getForKeys(String tableCat,String tableNam,String tableSchem){
 		
 		ArrayList<String> forKeys = new ArrayList<String>();
 		
 		try{
-		
 			ResultSet fKeys = data.getImportedKeys(tableCat,tableSchem,tableNam);
-			
+
 			while(fKeys.next()){
-				
 				forKeys.add(("FOREIGN KEY " + fKeys.getString("FKCOLUMN_NAME") + " REFERENCES " + fKeys.getString("PKTABLE_NAME") + "(" + fKeys.getString("PKCOLUMN_NAME") + ")"));
-				
 			}
-			
 		}
-		
 		catch (Exception e){
-			
 			System.out.println(e);
-			
 		}
 		
 		return forKeys;
@@ -203,28 +168,20 @@ public class SQLiteJDBC extends DbBasic {
      *@param a The resultSet created from collecting the columns in a table using metadata
 	 *@return allColumns An arraylist that contains the columns in the table
      */
-	public ArrayList getColumns(ResultSet a){
+	public ArrayList<Column> getColumns(ResultSet a){
 		
 		ArrayList<Column> allColumns = new ArrayList<Column>();		
 			
 		try{
-			
 			while(a.next()){
-				
 				allColumns.add(new Column(a.getString("COLUMN_NAME"),a.getString("DATA_TYPE"),a.getString("TYPE_NAME"),a.getString("COLUMN_SIZE"),a.getString("IS_NULLABLE")));
-				
 			}
-				
-	}
-		
+		}
 		catch(Exception e){
-			
 			System.out.println(e);
-			
 		}
 			
 		return allColumns;
-		
 	}
 	
 	/**
@@ -235,68 +192,48 @@ public class SQLiteJDBC extends DbBasic {
 	 *@param columns Contains the columns from a given table
 	 *@return tableData
      */
-	public ArrayList getData(String tableName,ArrayList<Column> columns){
+	public ArrayList<String> getData(String tableName,ArrayList<Column> columns){
 		
 		ArrayList <String> tableData = new ArrayList<String>();
 		ResultSet info = null;
 		
 		try{
-			
 			String query = ("SELECT * FROM " + tableName);
 			Statement sqlStmt = con.createStatement();
 			info = sqlStmt.executeQuery(query);
-			
+
 			while(info.next()){
-				
+
 				String result = null;
 				
 				for(int i = 0; i < columns.size();i++){
-					
 					if(i == 0){
-						
 						if((columns.get(i)).getTypeNumber() == 12){
-							
 							result = ("\"" + info.getString(columns.get(i).getColumnName()) + "\"");
-							
 						}
-						
 						else{
-							
 							result = (info.getString(columns.get(i).getColumnName()));
-							
 						}
 					}
-					
 					else{
-						
 						if((columns.get(i)).getTypeNumber() == 12){
-							
 							result = (result + ",\"" + info.getString(columns.get(i).getColumnName()) + "\"");
-							
-						}	
-						
+						}
 						else{
-							
 							result = (result + "," + info.getString(columns.get(i).getColumnName()));
-							
 						}
 					}
 				}
 				
 				result = ("INSERT INTO " + tableName + " VALUES (" + result + ");\n");
 				tableData.add(result);
-				
-			}	
+			}
 		}
-		
 		catch(Exception e){
-			
 			System.out.println(e);
-			
 		}
 		
 		return tableData;
-			
 	}
 	
 	/**
@@ -309,44 +246,36 @@ public class SQLiteJDBC extends DbBasic {
 	 *@param columns Used to reference the stored columns in the table
 	 
      */
-	public void constructTables(String tableName,String primaryKeys,ArrayList<String> foreignKeys, ArrayList<Column> columns){
+	public String constructTables(String tableName,String primaryKeys,ArrayList<String> foreignKeys, ArrayList<Column> columns){
 		
-		String createTables = ("CREATE TABLE " + tableName + "(\n\t");
+		String createTables = ("CREATE TABLE " + tableName + "(");
 		
 		for(int a = 0; a < columns.size(); a++){
-			
+
 			createTables = createTables + " " + columns.get(a).getColumnName() + " " + (columns.get(a)).getDataType();
-			
+
 			if((columns.get(a)).getIsNullable() == false){
-				
 				createTables = createTables + "NOT null";
-				
 			}
-			
+
 			createTables = createTables + ",";
 		}
 		
-		createTables = createTables + "\n\t" + primaryKeys;
-		
-		
+		createTables = createTables + primaryKeys;
+
 		for(int b = 0; b < foreignKeys.size(); b++){
-			
 			if(b == 0){
-				
-				createTables = createTables + ",\n\t" + foreignKeys.get(b);
-				
+				createTables = createTables + ",\n" + foreignKeys.get(b);
 			}
 		}
 		
 		createTables = createTables + ";\n";
-		System.out.println(createTables);
+		return createTables;
 	}
 
     public static void main(String[] args) {
        
 	   SQLiteJDBC uni = new SQLiteJDBC("University.db");
 	   uni.retrieveInfo();
-	   
     }
-    
 }

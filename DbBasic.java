@@ -5,7 +5,7 @@ public class DbBasic {
 	/**
 	 * Set to true to enable debug messages
 	 */
-	boolean	debug	= false;
+	boolean	debug = false;
 
 	/**
 	 * Name of database driver
@@ -26,14 +26,14 @@ public class DbBasic {
 	 *
 	 * @see #getConnection( )
 	 */
-	protected Connection	con	= null;
+	protected Connection con	= null;
 
 	/**
 	 * Filesystem path to database
 	 *
 	 * @see #DbBasic(String)
 	 */
-	public    String	dbName	= null;
+	public    String dbName	= null;
 	
 	/**
 	 * Outputs a stacktrace for debugging and exits
@@ -93,7 +93,6 @@ public class DbBasic {
 				+ "] does not exist");
 			System.exit( 0 );
 		}
-	
 		try {
 			Class.forName( JDBC_DRIVER );
 			getConnection( );
@@ -139,7 +138,6 @@ public class DbBasic {
 				  "Db.constructor ["
 				+ dbName
 				+ "]");
-
 		open( );
 	}
 }

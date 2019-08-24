@@ -18,39 +18,27 @@ public class Column
 		char nullable = isNullable.charAt(0);
 		
         if(nullable == 'N'){
-			
             columnIsNullable = false;
-			
         }
 	}
 	
 	public String getColumnName(){
-		
 		return columnName;
-		
 	}
 	
 	public String getDataType(){
-		
 		return columnDataType;
-		
 	}
 	
 	public int getColumnSize(){
-		
 		return Integer.valueOf(columnSize);
-		
 	}
 	
 	public int getTypeNumber(){
-		
 		return Integer.valueOf(columnTypeNumber);
-
 	}
 	
 	public boolean getIsNullable(){
-		
 		return columnIsNullable;
-
 	}
 }
